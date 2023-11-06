@@ -1,0 +1,45 @@
+﻿<h3>EmbedReport</h3>
+
+<div id="embed-container" style="height: 800px"></div>
+
+@code {
+    private string errorMessage = String.Empty;
+    private IJSObjectReference? embedModule;
+    private EmbeddedReportViewModel? reportViewModel;
+
+    protected override async Task onAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            if(firstRender)
+            {
+                var embedModuleTask = JS.InvokeAsync<IJSObjectReference>("import", "./embed.js");
+                //CALL THE REST HERE
+                var reportViewModelTask = Http.GetFromJsonAsync<EmbeddedReportViewModel>("api/PowerBI");
+                embedModule = await embedModuleTask;
+                reportViewModel = await reportViewModelTask;
+                StateHasChanged();
+            }
+            else if (embedModule is not null && reportViewModel is not null)
+            {
+                errorMessage = String.Empty;
+                await embedModule.InvokeVoidAsync("embedReport",
+                "embed-container",
+                reportViewModel.Id,
+                reportViewModel.EmbedUrl,
+                reportViewModel.Token
+
+                );
+            }
+            else
+            {
+                Console.Write("Else");
+            }
+        } catch(Exception ex)
+        {
+            Console.Write(ex.Message);
+        }
+
+    }
+
+}
